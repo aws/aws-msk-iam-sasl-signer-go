@@ -1,0 +1,14 @@
+dist
+/doc
+/doc-staging
+.yardoc
+Gemfile.lock
+/internal
+/vendor
+/private
+.gradle/
+build/
+.idea/
+bin/
+.vscode/
+*.iml
