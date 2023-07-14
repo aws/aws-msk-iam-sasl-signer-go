@@ -1,10 +1,6 @@
 name: License Scan
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+on: [pull_request]
 
 jobs:
   licensescan:
@@ -16,12 +12,12 @@ jobs:
 
     steps:
       - name: Checkout target
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
         with:
           path: signermain
           ref: ${{ github.base_ref }}
       - name: Checkout this ref
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
         with:
           path: new-ref
           fetch-depth: 0
@@ -30,7 +26,7 @@ jobs:
       - name: Get Target Files
         run: git --git-dir ./signermain/.git ls-files | grep -xf refDiffFiles.txt - > targetFiles.txt
       - name: Checkout scancode
-        uses: actions/checkout@v3
+        uses: actions/checkout@v2
         with:
           repository: nexB/scancode-toolkit
           path: scancode-toolkit
