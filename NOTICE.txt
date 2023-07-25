@@ -1,2 +1,0 @@
-AWS MSK IAM SASL Signer for Go
-Copyright 2023 Amazon.com, Inc. or its affiliates. All Rights Reserved.
