@@ -115,6 +115,15 @@ func TestConstructAuthToken(t *testing.T) {
 	assert.True(t, strings.HasPrefix(params.Get(UserAgentKey), "aws-msk-iam-sasl-signer-go/"))
 }
 
+func TestGenerateAuthTokenEmptyCredentials(t *testing.T) {
+	mockCreds := aws.AnonymousCredentials{}
+
+	token, err := GenerateAuthTokenFromCredentialsProvider(Ctx, TestRegion, &mockCreds)
+
+	assert.Error(t, err)
+	assert.Equal(t, token, "")
+}
+
 func TestGenerateAuthToken(t *testing.T) {
 	mockCreds := aws.Credentials{
 		AccessKeyID:     "TEST-ACCESS-KEY",
