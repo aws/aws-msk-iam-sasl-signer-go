@@ -158,7 +158,7 @@ func loadCredentialsFromCredentialsProvider(
 func constructAuthToken(ctx context.Context, region string, credentials *aws.Credentials) (string, error) {
 	endpointURL := fmt.Sprintf(endpointURLTemplate, region)
 
-	if credentials.AccessKeyID == "" || credentials.SecretAccessKey == "" {
+	if credentials == nil || credentials.AccessKeyID == "" || credentials.SecretAccessKey == "" {
 		return "", fmt.Errorf("aws credentials cannot be empty")
 	}
 
