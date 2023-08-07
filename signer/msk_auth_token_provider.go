@@ -36,22 +36,22 @@ var (
 
 // GenerateAuthToken generates base64 encoded signed url as auth token from default credentials.
 // Loads the IAM credentials from default credentials provider chain.
-func GenerateAuthToken(ctx context.Context, region string) (string, error) {
+func GenerateAuthToken(ctx context.Context, region string) (string, int64, error) {
 	credentials, err := loadDefaultCredentials(ctx, region)
 
 	if err != nil {
-		return "", fmt.Errorf("failed to load credentials: %w", err)
+		return "", 0, fmt.Errorf("failed to load credentials: %w", err)
 	}
 
 	return constructAuthToken(ctx, region, credentials)
 }
 
 // GenerateAuthTokenFromProfile generates base64 encoded signed url as auth token by loading IAM credentials from an AWS named profile.
-func GenerateAuthTokenFromProfile(ctx context.Context, region string, awsProfile string) (string, error) {
+func GenerateAuthTokenFromProfile(ctx context.Context, region string, awsProfile string) (string, int64, error) {
 	credentials, err := loadCredentialsFromProfile(ctx, region, awsProfile)
 
 	if err != nil {
-		return "", fmt.Errorf("failed to load credentials: %w", err)
+		return "", 0, fmt.Errorf("failed to load credentials: %w", err)
 	}
 
 	return constructAuthToken(ctx, region, credentials)
@@ -60,14 +60,14 @@ func GenerateAuthTokenFromProfile(ctx context.Context, region string, awsProfile
 // GenerateAuthTokenFromRole generates base64 encoded signed url as auth token by loading IAM credentials from an aws role Arn
 func GenerateAuthTokenFromRole(
 	ctx context.Context, region string, roleArn string, stsSessionName string,
-) (string, error) {
+) (string, int64, error) {
 	if stsSessionName == "" {
 		stsSessionName = DefaultSessionName
 	}
 	credentials, err := loadCredentialsFromRoleArn(ctx, region, roleArn, stsSessionName)
 
 	if err != nil {
-		return "", fmt.Errorf("failed to load credentials: %w", err)
+		return "", 0, fmt.Errorf("failed to load credentials: %w", err)
 	}
 
 	return constructAuthToken(ctx, region, credentials)
@@ -77,11 +77,11 @@ func GenerateAuthTokenFromRole(
 // from an aws credentials provider
 func GenerateAuthTokenFromCredentialsProvider(
 	ctx context.Context, region string, credentialsProvider aws.CredentialsProvider,
-) (string, error) {
+) (string, int64, error) {
 	credentials, err := loadCredentialsFromCredentialsProvider(ctx, credentialsProvider)
 
 	if err != nil {
-		return "", fmt.Errorf("failed to load credentials: %w", err)
+		return "", 0, fmt.Errorf("failed to load credentials: %w", err)
 	}
 
 	return constructAuthToken(ctx, region, credentials)
@@ -155,29 +155,34 @@ func loadCredentialsFromCredentialsProvider(
 }
 
 // Constructs Auth Token.
-func constructAuthToken(ctx context.Context, region string, credentials *aws.Credentials) (string, error) {
+func constructAuthToken(ctx context.Context, region string, credentials *aws.Credentials) (string, int64, error) {
 	endpointURL := fmt.Sprintf(endpointURLTemplate, region)
 
 	if credentials == nil || credentials.AccessKeyID == "" || credentials.SecretAccessKey == "" {
-		return "", fmt.Errorf("aws credentials cannot be empty")
+		return "", 0, fmt.Errorf("aws credentials cannot be empty")
 	}
 
 	req, err := buildRequest(DefaultExpirySeconds, endpointURL)
 	if err != nil {
-		return "", fmt.Errorf("failed to build request for signing: %w", err)
+		return "", 0, fmt.Errorf("failed to build request for signing: %w", err)
 	}
 
 	signedURL, err := signRequest(ctx, req, region, credentials)
 	if err != nil {
-		return "", fmt.Errorf("failed to sign request with aws sig v4: %w", err)
+		return "", 0, fmt.Errorf("failed to sign request with aws sig v4: %w", err)
+	}
+
+	expirationTimeMs, err := getExpirationTimeMs(signedURL)
+	if err != nil {
+		return "", 0, fmt.Errorf("failed to extract expiration from signed url: %w", err)
 	}
 
 	signedURLWithUserAgent, err := addUserAgent(signedURL)
 	if err != nil {
-		return "", fmt.Errorf("failed to add user agent to the signed url: %w", err)
+		return "", 0, fmt.Errorf("failed to add user agent to the signed url: %w", err)
 	}
 
-	return base64Encode(signedURLWithUserAgent), nil
+	return base64Encode(signedURLWithUserAgent), expirationTimeMs, nil
 }
 
 // Build https request with query parameters in order to sign.
@@ -208,6 +213,33 @@ func signRequest(ctx context.Context, req *http.Request, region string, credenti
 	)
 
 	return signedURL, err
+}
+
+// Parses the URL and gets the expiration time in millis associated with the signed url
+func getExpirationTimeMs(signedURL string) (int64, error) {
+	parsedURL, err := url.Parse(signedURL)
+
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse the signed url: %w", err)
+	}
+
+	params := parsedURL.Query()
+	date, err := time.Parse("20060102T150405Z", params.Get("X-Amz-Date"))
+
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse the 'X-Amz-Date' param from signed url: %w", err)
+	}
+
+	signingTimeMs := date.UnixNano() / int64(time.Millisecond)
+	expiryDurationSeconds, err := strconv.ParseInt(params.Get("X-Amz-Expires"), 10, 64)
+
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse the 'X-Amz-Expires' param from signed url: %w", err)
+	}
+
+	expiryDurationMs := expiryDurationSeconds * 1000
+	expiryMs := signingTimeMs + expiryDurationMs
+	return expiryMs, nil
 }
 
 // Calculate sha256Hash and hex encode it.

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/url"
 	"os"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -80,10 +81,11 @@ func TestConstructAuthToken(t *testing.T) {
 		SessionToken:    "MOCK-SESSION-TOKEN",
 	}
 
-	token, err := constructAuthToken(Ctx, TestRegion, &mockCreds)
+	token, expiryMs, err := constructAuthToken(Ctx, TestRegion, &mockCreds)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, token)
+	assert.NotEqual(t, int64(0), expiryMs)
 
 	decodedSignedURLBytes, err := base64.RawURLEncoding.DecodeString(token)
 	assert.NoError(t, err)
@@ -118,10 +120,11 @@ func TestConstructAuthToken(t *testing.T) {
 func TestGenerateAuthTokenEmptyCredentials(t *testing.T) {
 	mockCreds := aws.AnonymousCredentials{}
 
-	token, err := GenerateAuthTokenFromCredentialsProvider(Ctx, TestRegion, &mockCreds)
+	token, expiryMs, err := GenerateAuthTokenFromCredentialsProvider(Ctx, TestRegion, &mockCreds)
 
 	assert.Error(t, err)
 	assert.Equal(t, token, "")
+	assert.Equal(t, int64(0), expiryMs)
 }
 
 func TestGenerateAuthToken(t *testing.T) {
@@ -135,10 +138,11 @@ func TestGenerateAuthToken(t *testing.T) {
 	os.Setenv("AWS_SECRET_ACCESS_KEY", mockCreds.SecretAccessKey)
 	os.Setenv("AWS_SESSION_TOKEN", mockCreds.SessionToken)
 
-	token, err := GenerateAuthToken(Ctx, TestRegion)
+	token, expiryMs, err := GenerateAuthToken(Ctx, TestRegion)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, token)
+	assert.NotEqual(t, int64(0), expiryMs)
 
 	decodedSignedURLBytes, err := base64.RawURLEncoding.DecodeString(token)
 	assert.NoError(t, err)
@@ -183,10 +187,11 @@ func TestGenerateAuthTokenWithCredentialsProvider(t *testing.T) {
 
 	mockCredentialsProvider := MockCredentialsProvider{credentials: mockCreds}
 
-	token, err := GenerateAuthTokenFromCredentialsProvider(Ctx, TestRegion, mockCredentialsProvider)
+	token, expiryMs, err := GenerateAuthTokenFromCredentialsProvider(Ctx, TestRegion, mockCredentialsProvider)
 
 	assert.NoError(t, err)
 	assert.NotNil(t, token)
+	assert.NotEqual(t, int64(0), expiryMs)
 
 	decodedSignedURLBytes, err := base64.RawURLEncoding.DecodeString(token)
 	assert.NoError(t, err)
@@ -216,13 +221,23 @@ func TestGenerateAuthTokenWithCredentialsProvider(t *testing.T) {
 	assert.NoError(t, err)
 	assert.True(t, date.Before(time.Now().UTC()))
 	assert.True(t, strings.HasPrefix(params.Get(UserAgentKey), "aws-msk-iam-sasl-signer-go/"))
+
+	signingTimeMs := date.UnixNano() / int64(time.Millisecond)
+	expiryDurationSeconds, err := strconv.ParseInt(params.Get("X-Amz-Expires"), 10, 64)
+	assert.NoError(t, err)
+	expiryDurationMs := expiryDurationSeconds * 1000
+	assert.Equal(t, expiryMs, signingTimeMs+expiryDurationMs)
+
+	currentMillis := time.Now().UnixNano() / int64(time.Millisecond)
+	assert.True(t, expiryMs > currentMillis)
 }
 
 func TestGenerateAuthTokenWithFailingCredentialsProvider(t *testing.T) {
 	mockCredentialsProvider := aws.AnonymousCredentials{}
 
-	token, err := GenerateAuthTokenFromCredentialsProvider(Ctx, TestRegion, mockCredentialsProvider)
+	token, expiryMs, err := GenerateAuthTokenFromCredentialsProvider(Ctx, TestRegion, mockCredentialsProvider)
 
 	assert.Error(t, err)
 	assert.NotNil(t, token)
+	assert.Equal(t, int64(0), expiryMs)
 }
