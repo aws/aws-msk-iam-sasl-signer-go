@@ -53,7 +53,7 @@ type MSKAccessTokenProvider struct {
 }
 
 func (m *MSKAccessTokenProvider) Token() (*sarama.AccessToken, error) {
-  token, err := signer.GenerateAuthToken(context.TODO(), "<region>")
+  token, _, err := signer.GenerateAuthToken(context.TODO(), "<region>")
   return &sarama.AccessToken{Token: token}, err}
 
 func main() {
@@ -132,7 +132,7 @@ type MSKAccessTokenProvider struct {
 }
 
 func (m *MSKAccessTokenProvider) Token() (*sarama.AccessToken, error) {
-	token, err := signer.GenerateAuthToken(context.TODO(), "<region>")
+	token, _, err := signer.GenerateAuthToken(context.TODO(), "<region>")
 	return &sarama.AccessToken{Token: token}, err
 }
 
@@ -229,7 +229,7 @@ func consumeMessages(consumer sarama.Consumer) {
 * To use IAM credentials from a named profile, update the Token() function: 
 ```go
 func (t *MSKAccessTokenProvider) Token() (*sarama.AccessToken, error) {
-	token, err := signer.GenerateAuthTokenFromProfile(context.TODO(), "<region>", "<namedProfile>")
+	token, _, err := signer.GenerateAuthTokenFromProfile(context.TODO(), "<region>", "<namedProfile>")
 	return &sarama.AccessToken{Token: token}, err
 }
 ```
@@ -238,14 +238,14 @@ func (t *MSKAccessTokenProvider) Token() (*sarama.AccessToken, error) {
 
 ```go
 func (t *MSKAccessTokenProvider) Token() (*sarama.AccessToken, error) {
-        token, err := signer.GenerateAuthTokenFromRole(context.TODO(), "<region>", "<my-role-arn>", "my-sts-session-name")
+        token, _, err := signer.GenerateAuthTokenFromRole(context.TODO(), "<region>", "<my-role-arn>", "my-sts-session-name")
         return &sarama.AccessToken{Token: token}, err
 }
 ```
 * To use IAM credentials from a credentials provider, update the Token() function:
 ```go
 func (t *MSKAccessTokenProvider) Token() (*sarama.AccessToken, error) {
-        token, err := signer.GenerateAuthTokenFromCredentialsProvider(context.TODO(), "<region>", <MyCredentialsProvider>)
+        token, _, err := signer.GenerateAuthTokenFromCredentialsProvider(context.TODO(), "<region>", <MyCredentialsProvider>)
         return &sarama.AccessToken{Token: token}, err
 }
 ```
