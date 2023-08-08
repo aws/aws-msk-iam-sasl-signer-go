@@ -263,6 +263,23 @@ $ cd signer
 $ go test
 ```
 
+## Troubleshooting
+### Finding out which identity is being used
+You may receive an `Access denied` error and there may be some doubt as to which credential is being exactly used. The credential may be sourced from a role ARN, EC2 instance profile, credential profile etc.
+You can set the field `AwsDebugCreds` set to true before getting the token:
+
+```go
+    signer.AwsDebugCreds = true
+```
+the client library will print a debug log of the form:
+```
+Credentials Identity: {UserId: ABCD:test124, Account: 1234567890, Arn: arn:aws:sts::1234567890:assumed-role/abc/test124}
+```
+
+The log line provides the IAM Account, IAM user id and the ARN of the IAM Principal corresponding to the credential being used.
+
+Please note that the log level should also be set to DEBUG for this information to be logged. It is not recommended to run with AwsDebugCreds=true since it makes an additional remote call.
+
 ## Getting Help
 
 Please use these community resources for getting help. We use the GitHub issues

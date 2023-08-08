@@ -6,6 +6,8 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+
+	"log"
 	"net/http"
 	"net/url"
 	"runtime"
@@ -16,6 +18,7 @@ import (
 	"github.com/aws/aws-sdk-go-v2/aws"
 	"github.com/aws/aws-sdk-go-v2/aws/signer/v4"
 	"github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
 	"github.com/aws/aws-sdk-go-v2/service/sts"
 )
 
@@ -32,6 +35,7 @@ const (
 
 var (
 	endpointURLTemplate = "kafka.%s.amazonaws.com" // endpointURLTemplate represents the template for the Kafka endpoint URL
+	AwsDebugCreds       = false                    // AwsDebugCreds flag indicates whether credentials should be debugged
 )
 
 // GenerateAuthToken generates base64 encoded signed url as auth token from default credentials.
@@ -162,6 +166,10 @@ func constructAuthToken(ctx context.Context, region string, credentials *aws.Cre
 		return "", 0, fmt.Errorf("aws credentials cannot be empty")
 	}
 
+	if AwsDebugCreds {
+		logCallerIdentity(ctx, region, *credentials)
+	}
+
 	req, err := buildRequest(DefaultExpirySeconds, endpointURL)
 	if err != nil {
 		return "", 0, fmt.Errorf("failed to build request for signing: %w", err)
@@ -268,4 +276,30 @@ func addUserAgent(signedURL string) (string, error) {
 	parsedSignedURL.RawQuery = query.Encode()
 
 	return parsedSignedURL.String(), nil
+}
+
+// Log caller identity to debug which credentials are being picked up
+func logCallerIdentity(ctx context.Context, region string, awsCredentials aws.Credentials) {
+	cfg, err := config.LoadDefaultConfig(ctx,
+		config.WithRegion(region),
+		config.WithCredentialsProvider(credentials.StaticCredentialsProvider{
+			Value: awsCredentials,
+		}),
+	)
+	if err != nil {
+		log.Printf("failed to load AWS configuration: %v", err)
+	}
+
+	stsClient := sts.NewFromConfig(cfg)
+
+	callerIdentity, err := stsClient.GetCallerIdentity(ctx, &sts.GetCallerIdentityInput{})
+
+	if err != nil {
+		log.Printf("failed to get caller identity: %v", err)
+	}
+
+	log.Printf("Credentials Identity: {UserId: %s, Account: %s, Arn: %s}\n",
+		*callerIdentity.UserId,
+		*callerIdentity.Account,
+		*callerIdentity.Arn)
 }
