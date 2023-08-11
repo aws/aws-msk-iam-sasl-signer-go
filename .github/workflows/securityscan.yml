@@ -1,6 +1,12 @@
 name: Security Scan
 
-on: [pull_request]
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    - cron: '00 11 * * 2'
 
 jobs:
   securityscan:
@@ -22,3 +28,11 @@ jobs:
         uses: securego/gosec@master
         with:
           args: ./...
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v2
+        with:
+          languages: go
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v2
+      - name: Perform CodeQL Analysis
+        uses: github/codeql-action/analyze@v2
