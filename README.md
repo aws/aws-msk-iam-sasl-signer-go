@@ -1,7 +1,7 @@
 # AWS MSK IAM SASL Signer for Go
 
 [![Go Build status](https://github.com/aws/aws-msk-iam-sasl-signer-go/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/aws/aws-msk-iam-sasl-signer-go/actions/workflows/go.yml) [![Apache V2 License](https://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/aws/aws-msk-iam-sasl-signer-go/blob/main/LICENSE.txt)
-
+[![Security Scan](https://github.com/aws/aws-msk-iam-sasl-signer-go/actions/workflows/securityscan.yml/badge.svg?branch=main)](https://github.com/aws/aws-msk-iam-sasl-signer-go/actions/workflows/securityscan.yml)
 `aws-msk-iam-sasl-signer-go` is the AWS MSK IAM SASL Signer for Go programming language.
 
 The AWS MSK IAM SASL Signer for Go requires a minimum version of `Go 1.17`.
