@@ -2,6 +2,7 @@
 
 [![Go Build status](https://github.com/aws/aws-msk-iam-sasl-signer-go/actions/workflows/go.yml/badge.svg?branch=main)](https://github.com/aws/aws-msk-iam-sasl-signer-go/actions/workflows/go.yml) [![Apache V2 License](https://img.shields.io/badge/license-Apache%20V2-blue.svg)](https://github.com/aws/aws-msk-iam-sasl-signer-go/blob/main/LICENSE.txt)
 [![Security Scan](https://github.com/aws/aws-msk-iam-sasl-signer-go/actions/workflows/securityscan.yml/badge.svg?branch=main)](https://github.com/aws/aws-msk-iam-sasl-signer-go/actions/workflows/securityscan.yml)
+
 `aws-msk-iam-sasl-signer-go` is the AWS MSK IAM SASL Signer for Go programming language.
 
 The AWS MSK IAM SASL Signer for Go requires a minimum version of `Go 1.17`.
@@ -313,9 +314,6 @@ The AWS MSK IAM SASL Signer for Go will use GitHub [Issues] to track feature req
 **Contributing**. You can open pull requests for fixes or additions to the AWS MSK IAM SASL Signer for Go. All pull requests must be submitted under the Apache 2.0 license and will be reviewed by a team member before being merged in. Accompanying unit tests, where possible, are appreciated.
 
 ## Resources
-
-[Developer Guide](https://aws.github.io/aws-msk-iam-sasl-signer-go/docs/) - Use this document to learn how to get started and
-use the AWS MSK IAM SASL Signer for Go.
 
 [Service Documentation](https://docs.aws.amazon.com/msk/latest/developerguide/getting-started.html) - Use this
 documentation to learn how to interface with AWS MSK.
