@@ -41,7 +41,7 @@ import (
   "time"
   
   "github.com/aws/aws-msk-iam-sasl-signer-go/signer"
-  "github.com/Shopify/sarama"
+  "github.com/IBM/sarama"
 )
 
 var (
@@ -121,7 +121,7 @@ import (
 	"os/signal"
 
 	"github.com/awslabs/aws-msk-iam-sasl-signer-go/signer"
-	"github.com/Shopify/sarama"
+	"github.com/IBM/sarama"
 )
 
 var (
