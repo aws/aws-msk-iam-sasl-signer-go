@@ -120,7 +120,7 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/awslabs/aws-msk-iam-sasl-signer-go/signer"
+	"github.com/aws/aws-msk-iam-sasl-signer-go/signer"
 	"github.com/IBM/sarama"
 )
 
