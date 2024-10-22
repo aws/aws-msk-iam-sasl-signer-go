@@ -6,7 +6,6 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
-
 	"log"
 	"net/http"
 	"net/url"
@@ -69,6 +68,23 @@ func GenerateAuthTokenFromRole(
 		stsSessionName = DefaultSessionName
 	}
 	credentials, err := loadCredentialsFromRoleArn(ctx, region, roleArn, stsSessionName)
+
+	if err != nil {
+		return "", 0, fmt.Errorf("failed to load credentials: %w", err)
+	}
+
+	return constructAuthToken(ctx, region, credentials)
+}
+
+// GenerateAuthTokenFromWebIdentity generates base64 encoded signed url as auth token by loading IAM credentials from a web identity role Arn.
+func GenerateAuthTokenFromWebIdentity(
+	ctx context.Context, region string, roleArn string, webIdentityToken string, stsSessionName string,
+) (string, int64, error) {
+	if stsSessionName == "" {
+		stsSessionName = DefaultSessionName
+	}
+
+	credentials, err := loadCredentialsFromWebIdentityParameters(ctx, region, roleArn, webIdentityToken, stsSessionName)
 
 	if err != nil {
 		return "", 0, fmt.Errorf("failed to load credentials: %w", err)
@@ -145,6 +161,41 @@ func loadCredentialsFromRoleArn(
 		AccessKeyID:     *assumeRoleOutput.Credentials.AccessKeyId,
 		SecretAccessKey: *assumeRoleOutput.Credentials.SecretAccessKey,
 		SessionToken:    *assumeRoleOutput.Credentials.SessionToken,
+	}
+
+	return &creds, nil
+}
+
+// Loads credentials from a named by assuming the passed web identity role and id token.
+// This implementation creates a new sts client for every call to get or refresh token. In order to avoid this, please
+// use your own credentials' provider.
+// If you wish to use regional endpoint, please pass your own credentials' provider.
+func loadCredentialsFromWebIdentityParameters(
+	ctx context.Context, region, roleArn, webIdentityToken, stsSessionName string,
+) (*aws.Credentials, error) {
+	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
+
+	if err != nil {
+		return nil, fmt.Errorf("unable to load SDK config: %w", err)
+	}
+
+	stsClient := sts.NewFromConfig(cfg)
+
+	assumeRoleWithWebIdentityInput := &sts.AssumeRoleWithWebIdentityInput{
+		RoleArn:          aws.String(roleArn),
+		RoleSessionName:  aws.String(stsSessionName),
+		WebIdentityToken: aws.String(webIdentityToken),
+	}
+	assumeRoleWithWebIdentityOutput, err := stsClient.AssumeRoleWithWebIdentity(ctx, assumeRoleWithWebIdentityInput)
+	if err != nil {
+		return nil, fmt.Errorf("unable to assume role with web identity, %s: %w", roleArn, err)
+	}
+
+	//Create new aws.Credentials instance using the credentials from AssumeRoleWithWebIdentityOutput.Credentials
+	creds := aws.Credentials{
+		AccessKeyID:     *assumeRoleWithWebIdentityOutput.Credentials.AccessKeyId,
+		SecretAccessKey: *assumeRoleWithWebIdentityOutput.Credentials.SecretAccessKey,
+		SessionToken:    *assumeRoleWithWebIdentityOutput.Credentials.SessionToken,
 	}
 
 	return &creds, nil
