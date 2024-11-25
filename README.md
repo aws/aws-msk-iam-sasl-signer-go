@@ -5,7 +5,7 @@
 
 `aws-msk-iam-sasl-signer-go` is the AWS MSK IAM SASL Signer for Go programming language.
 
-The AWS MSK IAM SASL Signer for Go requires a minimum version of `Go 1.17`.
+The AWS MSK IAM SASL Signer for Go requires a minimum version of `Go 1.21`.
 
 Check out the [release notes](https://github.com/aws/aws-msk-iam-sasl-signer-go/blob/main/CHANGELOG.md) for information about the latest bug
 fixes, updates, and features added to the library.
