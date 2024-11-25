@@ -28,6 +28,7 @@ const (
 	SigningName          = "kafka-cluster"              // SigningName represents the signing name for the Kafka cluster.
 	UserAgentKey         = "User-Agent"                 // UserAgentKey represents the key for the User-Agent parameter in the request.
 	LibName              = "aws-msk-iam-sasl-signer-go" // LibName represents the name of the library.
+	DateQueryKey         = "X-Amz-Date"                 // DateQueryKey represents the key for the date in the query parameters.
 	ExpiresQueryKey      = "X-Amz-Expires"              // ExpiresQueryKey represents the key for the expiration time in the query parameters.
 	DefaultSessionName   = "MSKSASLDefaultSession"      // DefaultSessionName represents the default session name for assuming a role.
 	DefaultExpirySeconds = 900                          // DefaultExpirySeconds represents the default expiration time in seconds.
@@ -232,14 +233,14 @@ func getExpirationTimeMs(signedURL string) (int64, error) {
 	}
 
 	params := parsedURL.Query()
-	date, err := time.Parse("20060102T150405Z", params.Get("X-Amz-Date"))
+	date, err := time.Parse("20060102T150405Z", params.Get(DateQueryKey))
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to parse the 'X-Amz-Date' param from signed url: %w", err)
 	}
 
 	signingTimeMs := date.UnixNano() / int64(time.Millisecond)
-	expiryDurationSeconds, err := strconv.ParseInt(params.Get("X-Amz-Expires"), 10, 64)
+	expiryDurationSeconds, err := strconv.ParseInt(params.Get(ExpiresQueryKey), 10, 64)
 
 	if err != nil {
 		return 0, fmt.Errorf("failed to parse the 'X-Amz-Expires' param from signed url: %w", err)
