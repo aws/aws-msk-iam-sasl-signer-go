@@ -33,77 +33,78 @@ For example, you can use the signer library to generate IAM default credentials 
 package main
 
 import (
-  "context"
-  "crypto/tls"
-  "log"
-  "os"
-  "os/signal"
-  "time"
-  
-  "github.com/aws/aws-msk-iam-sasl-signer-go/signer"
-  "github.com/IBM/sarama"
+	"context"
+	"crypto/tls"
+	"log"
+	"os"
+	"os/signal"
+	"time"
+
+	"github.com/IBM/sarama"
+	"github.com/aws/aws-msk-iam-sasl-signer-go/signer"
 )
 
 var (
-  kafkaBrokers = []string{"<your_msk_bootstrap_string>"}
-  KafkaTopic = "<your topic name>"
-  enqueued int
+	kafkaBrokers = []string{"<your_msk_bootstrap_string>"}
+	KafkaTopic   = "<your topic name>"
+	enqueued     int
 )
 
 type MSKAccessTokenProvider struct {
 }
 
 func (m *MSKAccessTokenProvider) Token() (*sarama.AccessToken, error) {
-  token, _, err := signer.GenerateAuthToken(context.TODO(), "<region>")
-  return &sarama.AccessToken{Token: token}, err}
+	token, _, err := signer.GenerateAuthToken(context.TODO(), "<region>")
+	return &sarama.AccessToken{Token: token}, err
+}
 
 func main() {
-  sarama.Logger = log.New(os.Stdout, "[sarama] ", log.LstdFlags)
-  producer, err := setupProducer()
-  if err != nil {
-    panic(err)
-  } else {
-    log.Println("Kafka AsyncProducer up and running!")
-  }
+	sarama.Logger = log.New(os.Stdout, "[sarama] ", log.LstdFlags)
+	producer, err := setupProducer()
+	if err != nil {
+		panic(err)
+	} else {
+		log.Println("Kafka AsyncProducer up and running!")
+	}
 
-  // Trap SIGINT to trigger a graceful shutdown.
-  signals := make(chan os.Signal, 1)
-  signal.Notify(signals, os.Interrupt)
+	// Trap SIGINT to trigger a graceful shutdown.
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, os.Interrupt)
 
-  produceMessages(producer, signals)
+	produceMessages(producer, signals)
 
-  log.Printf("Kafka AsyncProducer finished with %d messages produced.", enqueued)
+	log.Printf("Kafka AsyncProducer finished with %d messages produced.", enqueued)
 }
 
 // setupProducer will create a AsyncProducer and returns it
-func setupProducer() (sarama.AsyncProducer, error){
-  // Set the SASL/OAUTHBEARER configuration
-  config := sarama.NewConfig()
-  config.Net.SASL.Enable = true
-  config.Net.SASL.Mechanism = sarama.SASLTypeOAuth
-  config.Net.SASL.TokenProvider = &MSKAccessTokenProvider{}
+func setupProducer() (sarama.AsyncProducer, error) {
+	// Set the SASL/OAUTHBEARER configuration
+	config := sarama.NewConfig()
+	config.Net.SASL.Enable = true
+	config.Net.SASL.Mechanism = sarama.SASLTypeOAuth
+	config.Net.SASL.TokenProvider = &MSKAccessTokenProvider{}
 
-  tlsConfig := tls.Config{}
-  config.Net.TLS.Enable = true
-  config.Net.TLS.Config = &tlsConfig
-  return sarama.NewAsyncProducer(kafkaBrokers, config)
+	tlsConfig := tls.Config{}
+	config.Net.TLS.Enable = true
+	config.Net.TLS.Config = &tlsConfig
+	return sarama.NewAsyncProducer(kafkaBrokers, config)
 }
 
 // produceMessages will send 'testing 123' to KafkaTopic each second, until receive a os signal to stop e.g. control + c
 // by the user in terminal
 func produceMessages(producer sarama.AsyncProducer, signals chan os.Signal) {
-  for {
-    time.Sleep(time.Second)
-    message := &sarama.ProducerMessage{Topic: KafkaTopic, Value: sarama.StringEncoder("testing 123")}
-    select {
-    case producer.Input() <- message:
-      enqueued++
-      log.Println("New Message produced")
-    case <-signals:
-      producer.AsyncClose() // Trigger a shutdown of the producer.
-      return
-    }
-  }
+	for {
+		time.Sleep(time.Second)
+		message := &sarama.ProducerMessage{Topic: KafkaTopic, Value: sarama.StringEncoder("testing 123")}
+		select {
+		case producer.Input() <- message:
+			enqueued++
+			log.Println("New Message produced")
+		case <-signals:
+			producer.AsyncClose() // Trigger a shutdown of the producer.
+			return
+		}
+	}
 }
 ```
 
