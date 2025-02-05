@@ -10,3 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Release first version of library
+
+
+## [1.0.1] - 2025-02-04
+
+### Added
+
+- Updated versions of the dependencies
+
