@@ -18,3 +18,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Updated versions of the dependencies
 
+## [1.0.2] - 2025-04-29
+
+### Added
+
+- Add support for assuming role using external ID
