@@ -240,7 +240,7 @@ func (t *MSKAccessTokenProvider) Token() (*sarama.AccessToken, error) {
 
 ```go
 func (t *MSKAccessTokenProvider) Token() (*sarama.AccessToken, error) {
-        token, _, err := signer.GenerateAuthTokenFromRole(context.TODO(), "<region>", "<my-role-arn>", "my-sts-session-name")
+        token, _, err := signer.GenerateAuthTokenFromRoleWithExternalId(context.TODO(), "<region>", "<my-role-arn>", "my-sts-session-name", "")
         return &sarama.AccessToken{Token: token}, err
 }
 ```
