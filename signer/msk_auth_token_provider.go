@@ -66,16 +66,7 @@ func GenerateAuthTokenFromProfile(ctx context.Context, region string, awsProfile
 func GenerateAuthTokenFromRole(
 	ctx context.Context, region string, roleArn string, stsSessionName string,
 ) (string, int64, error) {
-	if stsSessionName == "" {
-		stsSessionName = DefaultSessionName
-	}
-	credentials, err := loadCredentialsFromRoleArn(ctx, region, roleArn, stsSessionName, "")
-
-	if err != nil {
-		return "", 0, fmt.Errorf("failed to load credentials: %w", err)
-	}
-
-	return constructAuthToken(ctx, region, credentials)
+	return GenerateAuthTokenFromRoleWithExternalId(ctx, region, roleArn, stsSessionName, "")
 }
 
 // GenerateAuthTokenFromRoleWithExternalId generates base64 encoded signed url as auth token by loading IAM credentials from an aws role Arn
