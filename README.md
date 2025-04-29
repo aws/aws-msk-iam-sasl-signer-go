@@ -237,13 +237,21 @@ func (t *MSKAccessTokenProvider) Token() (*sarama.AccessToken, error) {
 ```
 
 * To use IAM credentials by assuming a IAM Role using sts, update the Token() function:
-
 ```go
 func (t *MSKAccessTokenProvider) Token() (*sarama.AccessToken, error) {
         token, _, err := signer.GenerateAuthTokenFromRole(context.TODO(), "<region>", "<my-role-arn>", "my-sts-session-name")
         return &sarama.AccessToken{Token: token}, err
 }
 ```
+
+* Optionally, if your IAM Role uses an External ID use the following (external-id can be left blank "" and it will be equivalent to the above):
+```go
+func (t *MSKAccessTokenProvider) Token() (*sarama.AccessToken, error) {
+        token, _, err := signer.GenerateAuthTokenFromRoleWithExternalId(context.TODO(), "<region>", "<my-role-arn>", "my-sts-session-name", "<external-id>")
+        return &sarama.AccessToken{Token: token}, err
+}
+```
+
 * To use IAM credentials from a credentials provider, update the Token() function:
 ```go
 func (t *MSKAccessTokenProvider) Token() (*sarama.AccessToken, error) {

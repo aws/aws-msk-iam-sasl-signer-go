@@ -66,10 +66,19 @@ func GenerateAuthTokenFromProfile(ctx context.Context, region string, awsProfile
 func GenerateAuthTokenFromRole(
 	ctx context.Context, region string, roleArn string, stsSessionName string,
 ) (string, int64, error) {
+	return GenerateAuthTokenFromRoleWithExternalId(ctx, region, roleArn, stsSessionName, "")
+}
+
+// GenerateAuthTokenFromRoleWithExternalId generates base64 encoded signed url as auth token by loading IAM credentials from an aws role Arn
+//
+// If the provided externalId is empty, it behaves exactly like GenerateAuthTokenFromRole.
+func GenerateAuthTokenFromRoleWithExternalId(
+	ctx context.Context, region string, roleArn string, stsSessionName string, externalId string,
+) (string, int64, error) {
 	if stsSessionName == "" {
 		stsSessionName = DefaultSessionName
 	}
-	credentials, err := loadCredentialsFromRoleArn(ctx, region, roleArn, stsSessionName)
+	credentials, err := loadCredentialsFromRoleArn(ctx, region, roleArn, stsSessionName, externalId)
 
 	if err != nil {
 		return "", 0, fmt.Errorf("failed to load credentials: %w", err)
@@ -122,7 +131,7 @@ func loadCredentialsFromProfile(ctx context.Context, region string, awsProfile s
 // use your own credentials provider.
 // If you wish to use regional endpoint, please pass your own credentials provider.
 func loadCredentialsFromRoleArn(
-	ctx context.Context, region string, roleArn string, stsSessionName string,
+	ctx context.Context, region string, roleArn string, stsSessionName string, externalId string,
 ) (*aws.Credentials, error) {
 	cfg, err := config.LoadDefaultConfig(ctx, config.WithRegion(region))
 
@@ -135,6 +144,9 @@ func loadCredentialsFromRoleArn(
 	assumeRoleInput := &sts.AssumeRoleInput{
 		RoleArn:         aws.String(roleArn),
 		RoleSessionName: aws.String(stsSessionName),
+	}
+	if externalId != "" {
+		assumeRoleInput.ExternalId = aws.String(externalId)
 	}
 	assumeRoleOutput, err := stsClient.AssumeRole(ctx, assumeRoleInput)
 	if err != nil {
