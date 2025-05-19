@@ -52,13 +52,7 @@ func GenerateAuthToken(ctx context.Context, region string) (string, int64, error
 
 // GenerateAuthTokenFromProfile generates base64 encoded signed url as auth token by loading IAM credentials from an AWS named profile.
 func GenerateAuthTokenFromProfile(ctx context.Context, region string, awsProfile string) (string, int64, error) {
-	credentials, err := loadCredentialsFromProfile(ctx, region, awsProfile, nil)
-
-	if err != nil {
-		return "", 0, fmt.Errorf("failed to load credentials: %w", err)
-	}
-
-	return constructAuthToken(ctx, region, credentials)
+	return GenerateAuthTokenFromProfileWithSharedConfigFiles(ctx, region, awsProfile, nil)
 }
 
 // GenerateAuthTokenFromProfileWithSharedConfigFiles generates base64 encoded signed url as auth token by loading IAM credentials from an AWS named profile with shared config files.
