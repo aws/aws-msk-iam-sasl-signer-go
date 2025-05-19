@@ -52,7 +52,12 @@ func GenerateAuthToken(ctx context.Context, region string) (string, int64, error
 
 // GenerateAuthTokenFromProfile generates base64 encoded signed url as auth token by loading IAM credentials from an AWS named profile.
 func GenerateAuthTokenFromProfile(ctx context.Context, region string, awsProfile string) (string, int64, error) {
-	credentials, err := loadCredentialsFromProfile(ctx, region, awsProfile)
+	return GenerateAuthTokenFromProfileWithSharedConfigFiles(ctx, region, awsProfile, nil)
+}
+
+// GenerateAuthTokenFromProfileWithSharedConfigFiles generates base64 encoded signed url as auth token by loading IAM credentials from an AWS named profile with shared config files.
+func GenerateAuthTokenFromProfileWithSharedConfigFiles(ctx context.Context, region string, awsProfile string, sharedConfigFiles []string) (string, int64, error) {
+	credentials, err := loadCredentialsFromProfile(ctx, region, awsProfile, sharedConfigFiles)
 
 	if err != nil {
 		return "", 0, fmt.Errorf("failed to load credentials: %w", err)
@@ -129,10 +134,16 @@ func loadDefaultCredentials(ctx context.Context, region string) (*aws.Credential
 }
 
 // Loads credentials from a named aws profile.
-func loadCredentialsFromProfile(ctx context.Context, region string, awsProfile string) (*aws.Credentials, error) {
-	cfg, err := config.LoadDefaultConfig(ctx,
+func loadCredentialsFromProfile(ctx context.Context, region string, awsProfile string, sharedConfigFiles []string) (*aws.Credentials, error) {
+	optsFns := []func(*config.LoadOptions) error{
 		config.WithRegion(region),
 		config.WithSharedConfigProfile(awsProfile),
+	}
+	if len(sharedConfigFiles) > 0 {
+		optsFns = append(optsFns, config.WithSharedConfigFiles(sharedConfigFiles))
+	}
+	cfg, err := config.LoadDefaultConfig(ctx,
+		optsFns...,
 	)
 
 	if err != nil {
